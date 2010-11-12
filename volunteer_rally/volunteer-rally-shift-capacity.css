@@ -1,0 +1,15 @@
+/* $Id$ */
+.capacity-number {
+  padding: 0 0.25em;
+  line-height: 1.5em;
+}
+.total-capacity {
+  font-size: 1.2em;
+}
+.remaining-capacity {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+.remaining-capacity-0 {
+  color: #999;
+}

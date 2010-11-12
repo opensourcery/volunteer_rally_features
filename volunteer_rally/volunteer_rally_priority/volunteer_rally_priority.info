@@ -1,0 +1,7 @@
+; $Id$
+name = Volunteer Rally Priority
+description = Priority codes and signup functionality for Volunteer Rally.
+core = 6.x
+dependencies[] = volunteer_rally
+dependencies[] = purl
+package = "Volunteer Rally"
