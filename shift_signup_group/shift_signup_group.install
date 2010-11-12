@@ -1,0 +1,9 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function shift_signup_group_install() {
+  update_sql("UPDATE {system} SET weight = 10 WHERE name = 'shift_signup_group'");
+}

@@ -1,0 +1,28 @@
+<?php
+// $Id$
+/**
+ * @file
+ * User profile module for Volunteer Rally.
+ */
+
+include_once('volunteer_profiles.features.inc');
+
+/**
+ * Preprocess user profile page to remove unwanted cruft.
+ */
+function volunteer_profiles_preprocess_user_profile(&$vars) {
+  // Overriding here wastes a bit of processing. It would be better to
+  // do this a the hook_menu_alter level, but context fires the user
+  // page condition via the view operation of hook_user.
+  unset($vars['profile'], $vars['user_profile']);
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function volunteer_profiles_init() {
+  // Redirect node views of user profiles to the user page.
+  if (($node = menu_get_object()) && $node->type == 'profile' && !arg(2)) {
+    drupal_goto('user/' . $node->uid);
+  }
+}

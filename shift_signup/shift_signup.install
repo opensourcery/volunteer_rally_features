@@ -1,0 +1,33 @@
+<?php
+// $Id$
+/**
+ * Install and update hooks for Shift Signup feature.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function shift_signup_install() {
+  // Set weight of author_smart_name to be less than volunteer_rally.
+  update_sql("UPDATE {system} SET weight = -10 WHERE name = 'author_smart_name'");
+
+  return $ret;
+}
+
+/**
+ * Enable author_smart_name and set weight of author_smart_name to be less than volunteer_rally.
+ */
+function shift_signup_update_6001() {
+  $ret = array();
+
+  // Enable new modules.
+  module_rebuild_cache();
+  $modules = array(
+    'author_smart_name',
+  );
+  drupal_install_modules($modules);
+
+  $ret[] = update_sql("UPDATE {system} SET weight = -10 WHERE name = 'author_smart_name'");
+  return $ret;
+}
+

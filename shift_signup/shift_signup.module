@@ -1,0 +1,46 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Allow users to signup for shifts.
+ */
+
+include_once('shift_signup.features.inc');
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function shift_signup_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id = 'signup_node_form') {
+    // Fill in default values for start/end times if they aren't set.
+    if ($event = node_load($form['field_signup_shift'][0]['nid']['#default_value'])) {
+      if (empty($form['field_signup_start_time'][0]['#default_value']['value'])) {
+        // Logic copied from volunteer_rally_event_process().
+        $timezone = !empty($event->field_shift_date[0]['timezone'])
+          ? $event->field_shift_date[0]['timezone']
+          : date_default_timezone_name();
+        $timezone_db = !empty($event->field_shift_date[0]['timezone_db']) ? $event->field_shift_date[0]['timezone_db'] : 'UTC';
+
+        $start = date_make_date($event->field_shift_date[0]['value'], $timezone_db);
+        $end = date_make_date($event->field_shift_date[0]['value2'], $timezone_db);
+        date_timezone_set($start, timezone_open($timezone));
+        date_timezone_set($end, timezone_open($timezone));
+
+        $date = date_format_date($start, 'custom', variable_get('date_format_day','j F Y'));
+        $start_time = date_format_date($start, 'custom', variable_get('date_format_time', 'g:ia'));
+        $end_time = date_format_date($end, 'custom', variable_get('date_format_time', 'g:ia'));
+
+        $form['field_signup_start_time'][0]['#default_value']['value'] = $start_time;
+        $form['field_signup_end_time'][0]['#default_value']['value'] = $end_time;
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function shift_signup_form_signup_node_form_alter(&$form, $form_state) {
+  // Remove preview button.
+  unset($form['buttons']['preview']);
+}

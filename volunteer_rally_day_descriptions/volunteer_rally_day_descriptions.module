@@ -1,0 +1,35 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Module/feature for attaching editable regions to each day of
+ * the week in the full month calendar view.
+ */
+
+include_once('volunteer_rally_day_descriptions.features.inc');
+
+/**
+ * Implementation of preprocess_calendar_month().
+ */
+function volunteer_rally_day_descriptions_preprocess_calendar_month(&$vars) {
+  // Attach the 7 boxes to the 7 days of the week.
+  foreach ($vars['day_names'] as $day => $data) {
+    $delta = 'vr_day_description_' . $day;
+
+    // Since the space is tight, just grab the box w/o the fancy inline editing.
+    ctools_include('export');
+    $box = boxes_load($delta);
+    if ($box) {
+      drupal_alter('boxes_view', $box, $delta);
+      $block = $box->render();
+
+      if (boxes_access_admin()) {
+        // Attach simple edit link.
+        $block['content'] .= l(t('Edit'), 'admin/build/block/configure/boxes/vr_day_description_' . $day, array('query' => drupal_get_destination()));
+      }
+
+      $vars['day_names'][$day]['data'] .= '<div class="volunteer-rally-day-description">' . $block['content'] . '</div>';
+    }
+  }
+  drupal_add_css(drupal_get_path('module', 'volunteer_rally_day_descriptions') . '/volunteer-rally-day-descriptions.css');
+}

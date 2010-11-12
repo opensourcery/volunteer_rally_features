@@ -1,0 +1,175 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Allows users to confirm attendance of a group shift signup.
+ */
+
+include_once('shift_signup_group_confirmation.features.inc');
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function shift_signup_group_confirmation_form_group_confirmation_node_form() {
+  // Remove preview button
+  unset($form['buttons']['preview']);
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function shift_signup_group_confirmation_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id = 'group_confirmation_node_form' && empty($form['shift_details'])) {
+    if ($signup = node_load($form['field_group_confirmation_signup'][0]['nid']['#default_value'])) {
+      $event = node_load($signup->field_signup_shift[0]['nid']);
+
+      // Logic copied from volunteer_rally_event_process().
+      $timezone = !empty($event->field_shift_date[0]['timezone'])
+        ? $event->field_shift_date[0]['timezone']
+        : date_default_timezone_name();
+      $timezone_db = !empty($event->field_shift_date[0]['timezone_db']) ? $event->field_shift_date[0]['timezone_db'] : 'UTC';
+
+      $start = date_make_date($event->field_shift_date[0]['value'], $timezone_db);
+      $end = date_make_date($event->field_shift_date[0]['value2'], $timezone_db);
+      date_timezone_set($start, timezone_open($timezone));
+      date_timezone_set($end, timezone_open($timezone));
+
+      $date = date_format_date($start, 'custom', variable_get('date_format_day','j F Y'));
+      $start_time = date_format_date($start, 'custom', variable_get('date_format_time', 'g:ia'));
+      $end_time = date_format_date($end, 'custom', variable_get('date_format_time', 'g:ia'));
+
+      // Get remaining slots.
+      $total = $signup->field_signup_group_count[0]['value'];
+      $remaining = shift_signup_group_confirmation_get_remaining_capacity($signup);
+      $capacity = theme('volunteer_rally_shift_capacity', $total, $remaining);
+
+      $form['signup_remaining'] = array(
+        '#value' => $remaining,
+        '#type' => 'value',
+      );
+      $form['signup_total'] = array(
+        '#value' => $total,
+        '#type' => 'value',
+      );
+
+      $label = '<label class="shift-details">' . t('Shift details') . ':</label>';
+      $value = $label . theme('volunteer_rally_event_details', $date, $start_time, $end_time, $capacity);
+      $form['shift_details'] = array(
+        '#type' => 'markup',
+        '#value' => $value,
+        '#weight' => -42,
+      );
+
+      // Add validator to enforce this capacity.
+      if (!in_array('_shift_signup_group_confirmation_capacity_validate', $form['#validate'])) {
+        $form['#validate'][] = '_shift_signup_group_confirmation_capacity_validate';
+      }
+
+      // Add validator for shift restrictions.
+      if (module_exists('cck_signup_restrictions')
+        && ($field_name = variable_get('cck_signup_restrictions_field_' . $event->type, FALSE))
+        && !in_array('_shift_signup_group_confirmation_restrictions_validate', $form['#validate'])) {
+        $form['restrictions_field'] = array(
+          '#type' => 'value',
+          '#value' => $field_name,
+        );
+        $form['restricted_event'] = array(
+          '#type' => 'value',
+          '#value' => $event,
+        );
+        $form['#validate'][] = '_shift_signup_group_confirmation_restrictions_validate';
+      }
+    }
+  }
+}
+
+/**
+ * Determine the remaining capacity of a group signup record.
+ *
+ * @TODO This should be generalized and put into the cck_signup_group_confirmation module.
+ */
+function shift_signup_group_confirmation_get_remaining_capacity($signup) {
+  $capacity = $signup->field_signup_group_count[0]['value'];
+
+  $nr_field = content_fields('field_group_confirmation_signup', 'group_confirmation');
+  $nr_db_info = content_database_info($nr_field);
+
+  $cap_field = content_fields('field_confirmation_group_count');
+  $cap_db_info = content_database_info($cap_field);
+
+  $count = db_result(db_query("SELECT SUM(cap.%s) FROM {node} LEFT JOIN {%s} nr USING (vid) LEFT JOIN {%s} cap USING (vid) WHERE node.type = 'group_confirmation' AND nr.%s = %d",
+    array(
+      ':count_field' => $cap_db_info['columns']['value']['column'],
+      ':table' => $nr_db_info['table'],
+      ':cap_table' => $cap_db_info['table'],
+      ':column' => $nr_db_info['columns']['nid']['column'],
+      ':nid' => $signup->nid)));
+
+  return (integer) $capacity - $count;
+}
+
+/**
+ * Verify that this group confirmation doesn't exceed the total
+ * remaining capacity on the group signup.
+ */
+function _shift_signup_group_confirmation_capacity_validate($form, &$form_state) {
+  $total = $form_state['values']['signup_total'];
+  $remaining = $form_state['values']['signup_remaining'];
+  $count = $form_state['values']['field_confirmation_group_count'][0]['value'];
+  if ($count > $remaining) {
+    form_set_error('field_confirmation_group_count', t('There are only %remaining slots available out of %total slots.', array('%remaining' => $remaining, '%total' => $total)));
+  }
+}
+
+/**
+ * Check that this confirmation isn't breaking any of the validation rules imposed on the shift.
+ */
+function _shift_signup_group_confirmation_restrictions_validate($form, &$form_state) {
+  $field_name = $form_state['values']['restrictions_field'];
+  $field = content_fields($field_name);
+  // Allowed values.
+  $restricted_fields = content_allowed_values($field);
+
+  // Load event.
+  $event = $form_state['values']['restricted_event'];
+
+  // Cycle through each restricted field, if set and greater than 0, throw an error.
+  foreach ($event->{$field_name} as $delta => $restriction) {
+    $restricted_field = $restriction['value'];
+    $restricted_field_map = str_replace('field_signup', 'field_confirmation', $restricted_field);
+    // If the count on a restricted field is > 0, this sign-up is invalid and must fail.
+    if (!empty($form_state['values'][$restricted_field_map][0]['value'])) {
+      form_set_error($restricted_field_map, t('This event is restricted for: %restriction', array('%restriction' => $restricted_fields[$restricted_field])));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_context_default_contexts_alter().
+ *
+ * Add the shift signup confirmation lists to the user_profile and front_authenticated contexts.
+ */
+function shift_signup_group_context_default_contexts_alter(&$contexts) {
+  if (module_exists('cck_signup_group_confirmation')) {
+    $block = array(
+      'module' => 'views',
+      'delta' => 'my_group_shift_signups-block_1',
+      'region' => 'sidebar_second',
+      'weight' => 1,
+    );    
+    if (isset($contexts['front_authenticated'])) {
+      $contexts['front_authenticated']
+        ->reactions['block']['blocks']['views-my_group_shift_signups-block_1'] = $block;
+    }
+
+    if (isset($contexts['user_profile'])
+      && module_exists('volunteer_profiles')) {
+      // Place in different region, and use block_2 which has a different title.
+      $block['region'] = 'content_bottom';
+      $block['delta'] = 'my_group_shift_signups-block_2';
+
+      $contexts['user_profile']
+        ->reactions['block']['blocks']['views-my_group_shift_signups-block_2'] = $block;
+    }
+  }
+}

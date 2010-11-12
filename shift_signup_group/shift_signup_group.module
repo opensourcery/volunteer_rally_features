@@ -1,0 +1,290 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Module to support group sign-ups for Volunteer Rally.
+ */
+
+include_once('shift_signup_group.features.inc');
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function shift_signup_group_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('group_node_form', 'content_add_more_js')) && isset($form['field_group_leads'])) {
+    // Change text of 'Add another item' button to be more descriptive.
+    $form['field_group_leads']['field_group_leads_add_more']['#value'] = t('Add another group lead');
+
+    // If user can administer users, allow them to change the owner of the node.
+    if (user_access('administer users')) {
+      $form['author']['#title'] = t('Group owner');
+      // Set the date access to the original, in case they also have administer nodes.
+      $form['author']['date']['#access'] = $form['author']['#access'];
+      $form['author']['#access'] = TRUE;
+      $form['author']['name']['#title'] = t('User');
+    }
+  }
+  elseif ($form_id == 'signup_node_form') {
+    // Change label of 'Group' to 'Choose the group'.
+    $form['field_signup_group']['#title'] = t('Choose the group');
+    $form['field_signup_group'][0]['#title'] = t('Choose the group');
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function shift_signup_group_form_group_node_form_alter(&$form, $form_state) {
+  // Remove preview button.
+  unset($form['buttons']['preview']);
+}
+
+/**
+ * Implementation of hook_cck_signup_validate().
+ */
+function shift_signup_group_cck_signup_validate($type, $event, &$form_state) {
+  if (variable_get('cck_signup_group_type_' . $type, FALSE) && $field = variable_get('cck_signup_group_field_count_' . $type, FALSE)) {
+    // Must select a group.
+    $values = $form_state['values'];
+    $count = $values[$field][0]['value'];
+    if ($count > 1 && empty($values['field_signup_group'][0]['nid'])) {
+      form_set_error('field_signup_group', t('You must select a group if the number of volunteers is greater than 1.'));
+    }
+    elseif (!empty($values['field_signup_group'][0]['nid'])
+      && $existing = shift_signup_group_get_signup($event, $values['field_signup_group'][0]['nid'], $values['nid'])) {
+      // Group can't be signup up more than once.
+      $group = node_load($values['field_signup_group'][0]['nid']);
+      form_set_error('field_signup_group', t('Group !group is already signed up for this event.', array('!group' => l($group->title, 'node/' . $existing->nid))));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function shift_signup_group_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  switch ($op) {
+    case 'presave':
+      // Set group title. Ideally this would be done via
+      // auto_nodetitle, but there was some weirdness using the eval'd pattern
+      // for that module.
+      if ($node->type == 'signup' && !empty($node->field_signup_group[0]['nid'])) {
+        $pattern = '[field_signup_shift-title] sign-up for [field_signup_group-title-raw]';
+        $node->title = token_replace($pattern, 'node', $node);
+      }
+      break;
+
+    case 'view':
+      if ($page && $node->type == 'signup' && node_access('update', $node) && cck_signup_group_is_group_signup($node) && module_exists('cck_signup_group_confirmation')) {
+        // Add a url field for easier sharing of the link.
+        $url = url('node/add/group-confirmation/' . $node->nid, array('absolute' => TRUE));
+        $node->content['shift_signup_group']['#value'] = drupal_get_form('volunteer_rally_box_form', $url, t('Confirmation link'), t('Copy the link to send to volunteers you would like to confirm attendance for this shift.'));
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation preprocess_views_view_table().
+ *
+ * - Replace first/last name with group name for group sign-up records.
+ * - Add in the group relationships to the relationships field.
+ */
+function shift_signup_group_preprocess_views_view_table(&$vars) {
+  if ($vars['view']->name == 'shift_signups') {
+
+    $fl_alias = $vars['view']->field['field_signup_group_nid']->field_alias;
+    $rel_alias = $vars['view']->field['field_entity_relationships_value']->field_alias;
+
+    $rel_field = content_fields('field_entity_relationships', 'group');
+    $rel_values = content_allowed_values($rel_field);
+    foreach ($vars['result'] as $id => $row) {
+      // Replace first/last name with group name for group sign-up records.
+      if (!empty($row->{$fl_alias})) {
+        $group = node_load($row->{$fl_alias});
+        $vars['rows'][$id]['field_profile_name_first_value'] = l($group->title, 'node/' . $group->nid);
+
+        // Add in the group relationships to the relationships field.
+        if (!empty($row->{$rel_alias})) {
+          $value = array();
+          foreach ($group->field_entity_relationships as $delta => $item) {
+            $value[] = $rel_values[$item['value']];
+          }
+          $vars['rows'][$id]['field_entity_relationships_value'] = implode('<br />', $value);
+        }
+      }
+
+    }
+  }
+
+}
+
+/**
+ * @TODO Move this back into cck_signup and abstract.
+ * Get existing signup for a group for a given event.
+ *
+ * @param $event
+ *   A shift node.
+ * @param $group_nid
+ *   A group node ID.
+ * @param $existing_signup_nid
+ *   Indicates that the signup is being edited.
+ * @return boolean
+ */
+function shift_signup_group_get_signup($event, $group_nid, $existing = FALSE) {
+  if (!empty($existing)) {
+    return FALSE;
+  }
+
+  $signup_nid = db_result(db_query("SELECT n.nid FROM {node} n LEFT JOIN {content_type_signup} s USING (vid) WHERE field_signup_group_nid = %d AND field_signup_shift_nid = %d", array(':group_nid' => $group_nid, ':signup_nid' => $event->nid)));
+
+  if (!empty($signup_nid)) {
+    return node_load($signup_nid);
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_views_default_views_alter().
+ */
+function shift_signup_group_views_default_views_alter(&$views) {
+  $group_field = array(
+    'label' => 'Group',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'link_to_node' => 1,
+    'label_type' => 'none',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 1,
+    'id' => 'field_signup_group_nid',
+    'table' => 'node_data_field_signup_group',
+    'field' => 'field_signup_group_nid',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  );
+
+  if (isset($views['shift_signups'])) {
+    // Change 'volunteer' label to include groups.
+    $views['shift_signups']->display['default']->display_options['fields']['field_profile_name_first_value']['label'] = t('Volunteer/Group');
+
+    // Add number of volunteers field.
+    $views['shift_signups']->display['default']->display_options['fields']['field_signup_group_count_value'] = array(
+      'label' => 'Number of volunteers',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_node' => 0,
+      'label_type' => 'widget',
+      'format' => 'default',
+      'multiple' => array(
+        'group' => TRUE,
+        'multiple_number' => '',
+        'multiple_from' => '',
+        'multiple_reversed' => FALSE,
+      ),
+      'exclude' => 0,
+      'id' => 'field_signup_group_count_value',
+      'table' => 'node_data_field_signup_group_count',
+      'field' => 'field_signup_group_count_value',
+      'override' => array(
+        'button' => 'Override',
+      ),
+      'relationship' => 'none',
+    );
+
+    // Add field_signup_group_nid to fields list.
+    $views['shift_signups']->display['default']->display_options['fields']['field_signup_group_nid'] = $group_field;
+
+    // Re-sort fields to desired order.
+    $new_fields = array();
+    $field_order = array(
+      'field_profile_name_first_value',
+      'field_profile_name_last_value',
+      'field_signup_group_count_value',
+      'field_staff_memo_value',
+      'edit_node',
+      'field_signup_group_nid',
+    );
+    foreach ($field_order as $name) {
+      $new_fields[$name] = $views['shift_signups']->display['default']->display_options['fields'][$name];
+    }
+    // Add any fields back not in this list.
+    foreach ($views['shift_signups']->display['default']->display_options['fields'] as $name => $field) {
+      if (!in_array($name, $field_order)) {
+        $new_fields[$name] = $field;
+      }
+    }
+    $views['shift_signups']->display['default']->display_options['fields'] = $new_fields;
+  }
+
+  if (isset($views['my_shift_signups'])) {
+    // Add field_signup_group_nid to fields list.
+    $group_field['exclude'] = 0;
+    $group_field['link_to_node'] = 0;
+    $views['my_shift_signups']->display['default']->display_options['fields']['field_signup_group_nid'] = $group_field;
+
+    // Place new field at the top.
+    $new_fields = array();
+    $field_order = array(
+      'field_signup_group_nid',
+      'field_shift_date_value',
+      'edit_node',
+      'delete_node',
+    ); 
+   foreach ($field_order as $name) {
+      $new_fields[$name] = $views['my_shift_signups']->display['default']->display_options['fields'][$name];
+    }
+    // Add any additional fields.
+    foreach ($views['my_shift_signups']->display['default']->display_options['fields'] as $name => $field) {
+      if (!in_array($name, $field_order)) {
+        $new_fields[$name] = $field;
+      }
+    }
+    $views['my_shift_signups']->display['default']->display_options['fields'] = $new_fields;
+  }
+}

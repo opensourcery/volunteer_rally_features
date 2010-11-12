@@ -1,0 +1,18 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Adds the ability to schedule repeating shifts for Volunteer Rally.
+ */
+
+include_once('volunteer_shifts_repeating.features.inc');
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function volunteer_shifts_repeating_form_node_repeat_node_settings_form_alter(&$form, $form_state) {
+  // Set default status to published for new nodes.
+  if (!isset($form['status']['#default_value'])) {
+    $form['status']['#default_value'] = 1;
+  }
+}
