@@ -1,0 +1,12 @@
+/* $Id$ */
+.volunteer-rally-event-details {
+  padding-left: 0.5em;
+  padding-top: 0.5em;
+}
+.volunteer-rally-event-details label {
+  float: left;
+  clear: left;
+  text-align: right;
+  width: 7em;
+  padding-right: 0.5em;
+}
