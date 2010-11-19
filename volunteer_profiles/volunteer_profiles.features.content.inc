@@ -41,13 +41,13 @@ function volunteer_profiles_content_default_fields() {
     'active' => '1',
     'text_processing' => '0',
     'max_length' => '',
-    'allowed_values' => 'apple|Apple Corps
-special|Special Events',
+    'allowed_values' => 'relationship_1|Relationship 1
+relationship_2|Relationship 2',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
         '0' => array(
-          'value' => '',
+          'value' => NULL,
         ),
       ),
       'default_value_php' => NULL,

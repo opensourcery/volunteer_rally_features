@@ -75,20 +75,6 @@ function volunteer_profiles_strongarm() {
       'grant_update' => 0,
       'grant_delete' => 0,
     ),
-    2 => array(
-      'gid' => 4,
-      'realm' => 'nodeaccess_rid',
-      'grant_view' => 0,
-      'grant_update' => 0,
-      'grant_delete' => 0,
-    ),
-    3 => array(
-      'gid' => 3,
-      'realm' => 'nodeaccess_rid',
-      'grant_view' => 0,
-      'grant_update' => 0,
-      'grant_delete' => 0,
-    ),
   );
 
   $export['nodeaccess_profile'] = $strongarm;

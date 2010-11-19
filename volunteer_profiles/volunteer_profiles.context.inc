@@ -69,6 +69,12 @@ function volunteer_profiles_context_default_contexts() {
           'region' => 'content_bottom',
           'weight' => 2,
         ),
+        'views-my_group_shift_signups-block_2' => array(
+          'module' => 'views',
+          'delta' => 'my_group_shift_signups-block_2',
+          'region' => 'content_bottom',
+          'weight' => 1,
+        ),
       ),
     ),
   );
