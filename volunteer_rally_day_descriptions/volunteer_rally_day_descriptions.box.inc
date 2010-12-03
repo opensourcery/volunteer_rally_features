@@ -13,7 +13,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 0 description';
   $box->options = array(
-    'body' => 'Ages 4+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -26,7 +26,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 1 description';
   $box->options = array(
-    'body' => 'Ages 11+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -39,7 +39,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 2 description';
   $box->options = array(
-    'body' => 'Ages 11+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -52,7 +52,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 3 description';
   $box->options = array(
-    'body' => 'Ages 11+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -65,7 +65,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 4 description';
   $box->options = array(
-    'body' => 'Ages 11+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -78,7 +78,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 5 description';
   $box->options = array(
-    'body' => 'Ages 11+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
@@ -91,7 +91,7 @@ function volunteer_rally_day_descriptions_default_box() {
   $box->title = '';
   $box->description = 'Calendar: Day 6 description';
   $box->options = array(
-    'body' => 'Ages 8+',
+    'body' => 'Optional descriptive text',
     'format' => '1',
   );
 
