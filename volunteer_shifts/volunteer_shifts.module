@@ -1,3 +1,333 @@
 <?php
-
+// $Id$
+/**
+ * @file
+ * Base module and features for Volunteer Rally.
+ */
 include_once('volunteer_shifts.features.inc');
+
+/**
+ * Implementation of hook_link().
+ */
+function volunteer_shifts_link($type, $node, $teaser = FALSE) {
+  $links = array();
+  if ($type == 'node' && $node->type == 'shift' && user_is_anonymous() && !user_access('create signup content')) {
+    // Add link to login form for anonymous users.
+    $links['signup_field_signup_shift'] = array(
+      'title' => t('Sign-up'),
+      'href' => 'user',
+      'query' => 'destination=node/add/signup/' . $node->nid,
+      'attributes' => array(
+        'title' => t('Login or register to sign-up for this shift'),
+        'class' => 'ctools-use-dialog',
+      ),
+    );
+  }
+
+  return $links;
+}
+
+/**
+ * Implementation of hook_link_alter().
+ */
+function volunteer_shifts_link_alter(&$links, $node) {
+  if ($node->type == 'shift') {
+    if (isset($links['signup_field_signup_shift']) && $signup = volunteer_shifts_get_signup($node)) {
+      // User already has a signup, change link.
+      $links['signup_field_signup_shift'] = array(
+        'href' => 'node/' . $signup->nid . '/edit',
+        'title' => t('Manage your signup'),
+        'attributes' => array('title' => t('Manage your signup')),
+      );
+    }
+    elseif (isset($links['signup_field_signup_shift']) && cck_signup_event_is_past($node)) {
+      // Check if event is in the past, remove link if that is the case.
+      unset($links['signup_field_signup_shift']);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * - Changes 'Author' to 'User' on sign-up form.
+ * - Changes the display element for field_signup_shift to use custom element defined below.
+ * - Changes page title on shift signup form.
+ * - Fills in default values for the signup start/end times.
+ * - Hides the signup status field during node add.
+ * - Hides the revision logs for all node types.
+ * - Hides the messaging/notification section on user profile forms.
+ */
+function volunteer_shifts_form_alter(&$form, $form_state, $form_id) {
+  if (in_array($form_id, array('signup_node_form'))) {
+    if (user_access('administer nodes')) {
+      // Change "Author" to "User" for signups.
+      $form['author']['#title'] = t('User');
+      $form['author']['#weight'] = -3;
+      $form['author']['#collapsed'] = FALSE;
+      $form['author']['name']['#title'] = t('User');
+      $form['author']['name']['#description'] = t('Select user that you are signing up for this shift. In the case of a group sign-up, enter the group lead.');
+      $form['author']['date']['#title'] = t('Signed up on');
+
+      $form['name'] = $form['author']['name'];
+      unset($form['author']);
+    }
+  
+    // Override display of nodereference_url element to show event date as well.
+    $form['field_signup_shift'][0]['nid']['#type'] = 'volunteer_shifts_event';
+
+    // Change page title.
+    drupal_set_title(t('Sign-up for shift'));
+
+    // Fill in default values for start/end times.
+    $shift = node_load($form['field_signup_shift'][0]['nid']['#default_value']);
+    if (empty($form['field_signup_start_time'][0]['#default_value']['value'])) {
+      $start_time = date('g:i a', strtotime($shift->field_shift_date[0]['value']));
+      $end_time = date('g:i a', strtotime($shift->field_shift_date[0]['value2']));
+      $form['field_signup_start_time'][0]['#default_value']['value'] = $start_time;
+      $form['field_signup_end_time'][0]['#default_value']['value'] = $end_time;
+    }
+    
+  }
+  if (in_array($form_id, array('signup_node_form')) && empty($form['nid']['#value'])) {
+    // Hide signup status.
+    $form['field_signup_status']['#access'] = FALSE;
+  }
+
+
+  // Hide the revision log when adding/editing nodes.
+  if (!empty($form['type']['#value'])
+    && $form_id == $form['type']['#value'] .'_node_form') {
+    $form['revision_information']['#access'] = FALSE;
+  }
+
+  // Hide messaging/notification section on user profile forms.
+  if ($form_id == 'user_profile_form' && !empty($form['messaging'])) {
+    $form['messaging']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function volunteer_shifts_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks['simple_login']['info'] = t('Simple login/register links');
+      return $blocks;
+
+    case 'view':
+      switch ($delta) {
+        case 'simple_login':
+          $items = array(
+            'login' => array(
+              'href' => 'user',
+              'title' => t('Sign In'),
+              'query' => drupal_get_destination(),
+            ),
+            'register' => array(
+              'href' => 'user/register',
+              'title' => t('Register'),
+              'query' => drupal_get_destination(),
+            ),
+          );
+          return array(
+            'subject' => '',
+            'content' => theme('links', $items),
+          );
+      }
+  }
+}
+
+/**
+ * Implementation of FAPI hook_elements().
+ *
+ * Any FAPI callbacks needed for individual widgets can be declared here,
+ * and the element will be passed to those callbacks for processing.
+ *
+ * Drupal will automatically theme the element using a theme with
+ * the same name as the hook_elements key.
+ *
+ * Autocomplete_path is not used by text_widget but other widgets can use it
+ * (see nodereference and userreference).
+ */
+function volunteer_shifts_elements() {
+  return array(
+    'volunteer_shifts_event' => array(
+      '#input' => TRUE,
+      '#columns' => array('nid'),
+      '#delta' => 0,
+      '#process' => array('volunteer_shifts_event_process'),
+    ),
+  );
+}
+
+/**
+ * Process an individual element.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $form['#field_info'][$element['#field_name']].
+ */
+function volunteer_shifts_event_process($element, $edit, $form_state, $form) {
+  $field_key = $element['#columns'][0];
+  $field = $form['#field_info'][$element['#field_name']];
+
+  if (isset($element['#value']) && is_numeric($element['#value'])) {
+    // Load event.
+    $event = node_load($element['#value']);
+
+    $element['#title'] = t('Shift details');
+
+    $timezone = !empty($event->field_shift_date[0]['timezone'])
+      ? $event->field_shift_date[0]['timezone']
+      : date_default_timezone_name();
+    $timezone_db = !empty($event->field_shift_date[0]['timezone_db']) ? $event->field_shift_date[0]['timezone_db'] : 'UTC';
+
+    $start = date_make_date($event->field_shift_date[0]['value'], $timezone_db);
+    $end = date_make_date($event->field_shift_date[0]['value2'], $timezone_db);
+    date_timezone_set($start, timezone_open($timezone));
+    date_timezone_set($end, timezone_open($timezone));
+
+    $date = date_format_date($start, 'custom', variable_get('date_format_day','j F Y'));
+    $start_time = date_format_date($start, 'custom', variable_get('date_format_time', 'g:ia'));
+    $end_time = date_format_date($end, 'custom', variable_get('date_format_time', 'g:ia'));
+
+    // Get remaining slots.
+    $total = $event->field_shift_capacity[0]['value'];
+    $remaining = cck_signup_get_remaining_capacity($event);
+    $capacity = theme('volunteer_shifts_shift_capacity', $total, $remaining);
+
+    $value = theme('volunteer_shifts_event_details', $date, $start_time, $end_time, $capacity);
+
+    $element['#display_title'] = $value;
+  }
+  else {
+    $element['#display_title'] = t('Referenced content not found.');
+  }
+
+  $element['nid'] = array(
+    '#type' => 'value',
+    '#value' => isset($element['#value']) ? $element['#value'] : $element['#value'],
+    '#parents' => $element['#parents'],
+  );
+
+  return $element;
+}
+
+/**
+ * Theme an event field.
+ */
+function theme_volunteer_shifts_event($element) {
+  drupal_add_css(drupal_get_path('module', 'volunteer_shifts') . '/volunteer-shifts-signup.css');
+  return theme('form_element', $element, $element['#display_title']);
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function volunteer_shifts_nodeapi(&$node, $op) {
+  switch ($op) {
+    case 'view':
+      // Attach the remaining capacity field.
+      if (variable_get('cck_signup_field_capacity_' . $node->type, FALSE)) {
+        $remaining = cck_signup_get_remaining_capacity($node);
+        $node->content['volunteer_shifts_remaining_capacity']['#value'] = theme('volunteer_shifts_remaining_capacity', $remaining);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function volunteer_shifts_theme() {
+  return array(
+    'volunteer_shifts_event' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'volunteer_shifts_event_details' => array(
+      'template' => 'volunteer-shifts-event-details',
+      'arguments' => array('date' => NULL, 'start_time' => NULL, 'end_time' => NULL, 'capacity' => NULL),
+    ),
+    'volunteer_shifts_shift_capacity' => array(
+      'template' => 'volunteer-shifts-shift-capacity',
+      'arguments' => array('total' => 0, 'remaining' => 0),
+    ),
+    'volunteer_shifts_remaining_capacity' => array(
+      'template' => 'volunteer-shifts-remaining-capacity',
+      'arguments' => array('remaining' => 0),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_cck_signup_validate().
+ */
+function volunteer_shifts_cck_signup_validate($type, $event, &$form_state) {
+  $values = $form_state['values'];
+  if (empty($values['nid']) && $existing = volunteer_shifts_get_signup($event)) {
+    // Verify user isn't already signed up.
+    form_set_error('', t('You are <a href="!url">already signed up</a> for this event.', array('!url' => url('node/' . $existing->nid))));
+  }
+}
+
+/**
+ * Implementation of preprocess_calendar_month_node().
+ */
+function volunteer_shifts_preprocess_calendar_month_node(&$vars) {
+  if (isset($vars['fields']['node_data_field_shift_date_field_shift_capacity_value'])) {
+    $total = $vars['fields']['node_data_field_shift_date_field_shift_capacity_value']['data'];
+    $node = node_load($vars['node']->nid);
+    $remaining = cck_signup_get_remaining_capacity($node);
+    $vars['fields']['node_data_field_shift_date_field_shift_capacity_value']['data'] = theme('volunteer_shifts_shift_capacity', $total, $remaining);
+    drupal_add_css(drupal_get_path('module', 'volunteer_shifts') . '/volunteer-shifts-shift-capacity.css');
+  }
+}
+
+/**
+ * Get a signup record for a given event.
+ *
+ * @param $event
+ *   Event node object.
+ * @param $account
+ *   User object.
+ * @return boolean
+ */
+function volunteer_shifts_get_signup($event, $account = NULL) {
+  if (empty($account)) {
+    global $user;
+    $account = user_load($user->uid);
+  }
+
+  if (!$account->uid) {
+    return FALSE;
+  }
+
+  $signup_nid = db_result(db_query("SELECT n.nid FROM {node} n LEFT JOIN {content_type_signup} s USING (vid) WHERE s.field_signup_shift_nid = %d AND n.type = '%s' AND n.uid = %d", array(':shift_nid' => $event->nid, ':type' => 'signup', ':uid' => $account->uid)));
+  if (!empty($signup_nid)) {
+    return node_load($signup_nid);
+  }
+  return FALSE;
+}
+
+/**
+ * Single textfield form for displaying urls.
+ */
+function volunteer_shifts_box_form($form_state, $content, $title, $description = '') {
+  $form['copy'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $content,
+    '#attributes' => array(
+      'class' => 'volunteer-shifts-box',
+      'readonly' => TRUE,
+    ),
+    '#description' => $description,
+    '#title' => $title,
+  );
+
+  drupal_add_js(drupal_get_path('module', 'volunteer_shifts') . '/volunteer-shifts-box.js');
+
+  return $form;
+}

@@ -11,18 +11,18 @@
  *   $capacity - shift capacity
  */
 ?>
-<div class="volunteer-rally-event-details">
+<div class="volunteer-shifts-event-details">
   <div>
     <label><?php print t('Date'); ?>:</label>
-    <span class="volunteer-rally-event-date"><?php print $date; ?></span>
+    <span class="volunteer-shifts-event-date"><?php print $date; ?></span>
   </div>
   <div>
     <label><?php print t('Start time'); ?>:</label>
-    <span class="volunteer-rally-event-start"><?php print $start_time; ?></span>
+    <span class="volunteer-shifts-event-start"><?php print $start_time; ?></span>
   </div>
   <div>
     <label><?php print t('End time'); ?>:</label>
-    <span class="volunteer-rally-event-end"><?php print $end_time; ?></span>
+    <span class="volunteer-shifts-event-end"><?php print $end_time; ?></span>
   </div>
     <label><?php print t('Capacity'); ?>:</label>
     <?php print $capacity; ?>

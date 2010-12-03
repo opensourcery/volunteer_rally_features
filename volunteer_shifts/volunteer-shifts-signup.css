@@ -1,9 +1,9 @@
 /* $Id$ */
-.volunteer-rally-event-details {
+.volunteer-shifts-event-details {
   padding-left: 0.5em;
   padding-top: 0.5em;
 }
-.volunteer-rally-event-details label {
+.volunteer-shifts-event-details label {
   float: left;
   clear: left;
   text-align: right;

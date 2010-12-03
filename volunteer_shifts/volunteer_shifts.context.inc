@@ -26,14 +26,14 @@ function volunteer_shifts_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
-        'boxes-volunteer_rally_welcome_message' => array(
+        'boxes-volunteer_shifts_welcome_message' => array(
           'module' => 'boxes',
-          'delta' => 'volunteer_rally_welcome_message',
+          'delta' => 'volunteer_shifts_welcome_message',
           'region' => 'sidebar_second',
           'weight' => 0,
         ),
-        'volunteer_rally-simple_login' => array(
-          'module' => 'volunteer_rally',
+        'volunteer_shifts-simple_login' => array(
+          'module' => 'volunteer_shifts',
           'delta' => 'simple_login',
           'region' => 'sidebar_second',
           'weight' => 1,
@@ -76,9 +76,9 @@ function volunteer_shifts_context_default_contexts() {
           'region' => 'sidebar_second',
           'weight' => 0,
         ),
-        'boxes-volunteer_rally_site_message' => array(
+        'boxes-volunteer_shifts_site_message' => array(
           'module' => 'boxes',
-          'delta' => 'volunteer_rally_site_message',
+          'delta' => 'volunteer_shifts_site_message',
           'region' => 'content_top',
           'weight' => 0,
         ),
