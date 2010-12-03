@@ -1,6 +1,4 @@
 core = "6.x"
-dependencies[] = "shift_signup_group"
-dependencies[] = "volunteer_profiles"
 description = "Allow staff with appropriate permissions to add notes to volunteers, groups, shifts and sign-ups"
 features[content][] = "group-field_staff_memo"
 features[content][] = "profile-field_staff_memo"
