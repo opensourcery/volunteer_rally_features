@@ -8,10 +8,10 @@ function volunteer_shifts_priority_capacity_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'purl_method_volunteer_rally_priority';
+  $strongarm->name = 'purl_method_volunteer_shifts_priority_capacity';
   $strongarm->value = 'path';
 
-  $export['purl_method_volunteer_rally_priority'] = $strongarm;
+  $export['purl_method_volunteer_shifts_priority_capacity'] = $strongarm;
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
