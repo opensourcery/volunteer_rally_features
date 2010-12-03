@@ -13,8 +13,10 @@ function volunteer_shifts_default_box() {
   $box->title = '';
   $box->description = 'Sitewide message for authenticated users';
   $box->options = array(
-    'body' => '<strong>Welcome!  Each listing below is for food sorting projects in our warehouse in Potrero Hill, San Francisco. To sign up for a shift, click on one of the shift blocks.  Available spaces are listed first in bold so you can easily see which shifts need additional support.</strong> ',
-    'format' => '1',
+    'body' => 'Welcome to your <strong>Volunteer Rally</strong> installation.
+
+<h1>MARCUS! GET SOMETHING BETTER IN HERE</h1>',
+    'format' => '2',
   );
 
   $export['volunteer_shifts_site_message'] = $box;
