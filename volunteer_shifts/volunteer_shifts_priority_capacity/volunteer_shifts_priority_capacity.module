@@ -1,3 +1,225 @@
 <?php
-
+// $Id$
+/**
+ * @file
+ * Priority codes and signup functionality for Volunteer Rally.
+ */
 include_once('volunteer_shifts_priority_capacity.features.inc');
+
+define('VOLUNTEER_SHIFTS_PRIORITY_CAPACITY_PREFIX', 'pc-');
+
+/**
+ * Implementation of hook_perm().
+ */
+function volunteer_shifts_priority_capacity_perm() {
+  return array('manage volunteer rally priority codes');
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function volunteer_shifts_priority_capacity_form_priority_code_node_form_alter(&$form, $form_state) {
+  // Remove preview button.
+  unset($form['buttons']['preview']);
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ * Output the priority code url for privileged users.
+ */
+function volunteer_shifts_priority_capacity_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'view' && $node->type == 'priority_code' && user_access('manage volunteer rally priority codes')) {
+    $priority_code = $node;
+  }
+  elseif ($op == 'view' && $node->type == 'shift' && user_access('manage volunteer rally priority codes') && !empty($node->field_shift_priority_code[0]['nid'])) {
+    $priority_code = node_load($node->field_shift_priority_code[0]['nid']);
+  }
+
+  if (isset($priority_code)) {
+    $url = url(VOLUNTEER_SHIFTS_PRIORITY_CAPACITY_PREFIX . volunteer_shifts_priority_capacity_make_purl($priority_code->title), array('absolute' => TRUE));
+    $node->content['volunteer_shifts_priority_capacity'] = array(
+      '#value' => t('<label>Priority code access url: <a href="!url">!url</a>', array('!url' => $url)),
+      '#weight' => 10,
+    );
+  }
+
+}
+
+/**
+ * Implementation of hook_purl_modifiers().
+ */
+function volunteer_shifts_priority_capacity_purl_modifiers($reset = FALSE) {
+  static $modifiers;
+
+  if (!isset($modifiers) || $reset) {
+    $modifiers = array();
+    $result = db_query("SELECT nid, title FROM {node} WHERE type = '%s'", array(':type' => 'priority_code'));
+    while ($row = db_fetch_object($result)) {
+      $modifiers[] = array(
+        'value' => VOLUNTEER_SHIFTS_PRIORITY_CAPACITY_PREFIX . volunteer_shifts_priority_capacity_make_purl($row->title),
+        'id' => $row->nid,
+      );
+    }
+  }
+
+  return array('volunteer_shifts_priority_capacity' => $modifiers);
+}
+
+/**
+ * Implementation of hook_purl_provider().
+ */
+function volunteer_shifts_priority_capacity_purl_provider() {
+  $items = array();
+
+  $items['volunteer_shifts_priority_capacity'] = array(
+    'name' => t('Priority Code'),
+    'description' => t('Provide access to Volunteer Rally priority code content.'),
+    'callback' => 'volunteer_shifts_priority_capacity_code_callback',
+    'callback arguments' => array(),
+  );
+
+  return $items;
+}
+
+/**
+ * Helper function to make school names more suitable for path prefixing.
+ */
+function volunteer_shifts_priority_capacity_make_purl($title) {
+  return check_url(str_replace(' ', '-', strtolower($title)));
+}
+
+/**
+ * PURL callback for priority codes.
+ */
+function volunteer_shifts_priority_capacity_code_callback($nid) {
+  // Set the priority code.
+  volunteer_shifts_priority_capacity_set_code($nid);
+}
+
+/**
+ * Sets the priority code.
+ */
+function volunteer_shifts_priority_capacity_set_code($nid = NULL, $reset = FALSE) {
+  static $code;
+
+  if ($reset) {
+    unset($code);
+  }
+
+  if (!isset($code) && $nid) {
+    $code = node_load($nid);
+  }
+
+  return $code;
+}
+
+/**
+ * Return the active priority code.
+ */
+function volunteer_shifts_priority_capacity_get_code() {
+  return volunteer_shifts_priority_capacity_set_code();
+}
+
+/**
+ * Implementation of hook_views_pre_render().
+ *
+ * If user has manage access, all shifts are
+ * displayed. Otherwise, only shifts matching the current priority
+ * code are shown. If there is no priority code, all priority code shifts
+ * are hidden.
+ */
+function volunteer_shifts_priority_capacity_views_pre_render(&$view) {
+  if ($view->name == 'shift_calendar' && !empty($view->result) && !user_access('manage volunteer rally priority codes')) {
+    $code = volunteer_shifts_priority_capacity_get_code();
+    $field = $view->field['field_shift_priority_code_value']->aliases['field_shift_priority_code_nid'];
+    foreach ($view->result as $id => $row) {
+      $shift_code = $row->{$field};
+      if ($code->nid && !$shift_code) {
+        // Operating under a priority code, hide non-priority shifts.
+        unset($view->result[$id]);
+      }
+      elseif ($shift_code != $code->nid) {
+        // Hide non-matching codes as well.
+        unset($view->result[$id]);
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of preprocess_calendar_month_node().
+ *
+ * Add special classes for distinct priority code shifts.
+ */
+function volunteer_shifts_priority_capacity_preprocess_calendar_month_node(&$vars) {
+  $priority_code_nid = $vars['node']->raw->node_data_field_shift_date_field_shift_priority_code_nid;
+  if ($priority_code_nid) {
+    $node = node_load($priority_code_nid);
+    $vars['class'] .= ' volunteer-rally-priority ' . _volunteer_shifts_priority_capacity_get_class(volunteer_shifts_priority_capacity_make_purl($node->title));
+    drupal_add_css(drupal_get_path('module', 'volunteer_shifts_priority_capacity') . '/volunteer-rally-priority.css');
+  }
+}
+
+/**
+ * Maintains an internal cache so each separate priority code gets
+ * assigned a unique class on a given page.
+ */
+function _volunteer_shifts_priority_capacity_get_class($code) {
+  static $codes = array();
+  static $i = 0;
+
+  if (!isset($codes[$code])) {
+    $codes[$code] = $i;
+    $i ++;
+  }
+
+  return 'volunteer-rally-priority-' . $codes[$code];
+}
+
+/**
+ * Implementation of hook_views_default_views_alter().
+ */
+function volunteer_shifts_priority_capacity_views_default_views_alter(&$views) {
+  if (isset($views['shift_calendar'])) {
+    // Add field_shift_priority_code_value to fields list.
+    $views['shift_calendar']->display['default']->display_options['fields']['field_shift_priority_code_value'] = array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_node' => 0,
+      'label_type' => 'none',
+      'format' => 'plain',
+      'multiple' => array(
+        'group' => TRUE,
+        'multiple_number' => '',
+        'multiple_from' => '',
+        'multiple_reversed' => FALSE,
+      ),
+      'exclude' => 1,
+      'id' => 'field_shift_priority_code_nid',
+      'table' => 'node_data_field_shift_priority_code',
+      'field' => 'field_shift_priority_code_nid',
+      'relationship' => 'none',
+    );
+  }
+}
