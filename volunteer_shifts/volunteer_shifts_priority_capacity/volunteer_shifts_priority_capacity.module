@@ -156,8 +156,8 @@ function volunteer_shifts_priority_capacity_preprocess_calendar_month_node(&$var
   $priority_code_nid = $vars['node']->raw->node_data_field_shift_date_field_shift_priority_code_nid;
   if ($priority_code_nid) {
     $node = node_load($priority_code_nid);
-    $vars['class'] .= ' volunteer-rally-priority ' . _volunteer_shifts_priority_capacity_get_class(volunteer_shifts_priority_capacity_make_purl($node->title));
-    drupal_add_css(drupal_get_path('module', 'volunteer_shifts_priority_capacity') . '/volunteer-rally-priority.css');
+    $vars['class'] .= ' volunteer-shifts-priority-capacity ' . _volunteer_shifts_priority_capacity_get_class(volunteer_shifts_priority_capacity_make_purl($node->title));
+    drupal_add_css(drupal_get_path('module', 'volunteer_shifts_priority_capacity') . '/volunteer-shifts-priority-capacity.css');
   }
 }
 
@@ -174,7 +174,7 @@ function _volunteer_shifts_priority_capacity_get_class($code) {
     $i ++;
   }
 
-  return 'volunteer-rally-priority-' . $codes[$code];
+  return 'volunteer-shifts-priority-capacity-' . $codes[$code];
 }
 
 /**
