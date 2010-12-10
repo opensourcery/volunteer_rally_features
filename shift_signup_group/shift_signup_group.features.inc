@@ -11,6 +11,9 @@ function shift_signup_group_ctools_plugin_api() {
   elseif ($module == "noderelationships" && $api == "default_node_relationships") {
     return array("version" => 1);
   }
+  elseif ($module == "noderelationships" && $api == "noderelationships") {
+    return array("version" => 1);
+  }
   elseif ($module == "strongarm" && $api == "strongarm") {
     return array("version" => 1);
   }
