@@ -12,7 +12,7 @@ function volunteer_shifts_priority_capacity_noderelationships_default_settings()
   $noderelationships_default_setting->relation_type = 'noderef';
   $noderelationships_default_setting->related_type = '';
   $noderelationships_default_setting->field_name = 'field_shift_priority_code';
-  $noderelationships_default_setting->settings = 'a:1:{s:20:"create_and_reference";s:25:"field_shift_priority_code";}';
+  $noderelationships_default_setting->settings = 'a:2:{s:25:"search_and_reference_view";s:36:"noderelationships_noderef:page_table";s:20:"create_and_reference";s:25:"field_shift_priority_code";}';
   $noderelationships_default_setting->export_key = 'shift__field_shift_priority_code';
   $export['shift__field_shift_priority_code'] = $noderelationships_default_setting;
 
