@@ -1,6 +1,0 @@
-; $Id$
-name = Volunteer Rally
-description = Core module for Volunteer Rally.
-core = 6.x
-package = "Volunteer Rally"
-dependencies[] = cck_signup
