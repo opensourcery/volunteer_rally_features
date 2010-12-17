@@ -40,11 +40,11 @@ function shift_restrictions_content_default_fields() {
     'active' => '1',
     'text_processing' => '0',
     'max_length' => '',
-    'allowed_values' => 'field_signup_valid_count_1|Children (ages 4-8)
-field_signup_valid_count_2|Children (ages 8-11)
-field_signup_valid_count_3|Middle school/Jr. high school students
-field_signup_valid_count_4|High school students
-field_signup_valid_count_5|Special needs',
+    'allowed_values' => 'field_signup_valid_count_1|Restriction 1
+field_signup_valid_count_2|Restriction 2
+field_signup_valid_count_3|Restriction 3
+field_signup_valid_count_4|Restriction 4
+field_signup_valid_count_5|Restriction 5',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
@@ -107,9 +107,9 @@ field_signup_valid_count_5|Special needs',
         ),
       ),
       'default_value_php' => NULL,
-      'label' => 'Children (ages 4-8)',
+      'label' => 'Sample restriction 1 (eg, Children under 12)',
       'weight' => '1',
-      'description' => 'Sundays only for 4-8 years. Each child must be accompanied by an adult.',
+      'description' => 'Description of why this shift is restricted',
       'type' => 'number',
       'module' => 'number',
     ),
@@ -161,9 +161,9 @@ field_signup_valid_count_5|Special needs',
         ),
       ),
       'default_value_php' => NULL,
-      'label' => 'Children (ages 8-11)',
+      'label' => 'Sample restriction 2',
       'weight' => '2',
-      'description' => 'Saturdays and Sundays only for 8-11 years.  Each child must be accompanied by an adult.',
+      'description' => 'Sample explanation text',
       'type' => 'number',
       'module' => 'number',
     ),
@@ -215,9 +215,9 @@ field_signup_valid_count_5|Special needs',
         ),
       ),
       'default_value_php' => NULL,
-      'label' => 'Middle school/Jr. high school students',
+      'label' => 'Sample restriction 3',
       'weight' => '3',
-      'description' => 'Middle school students must be accompanied by an adult. (Groups require 1 adult for every 5 middle school students.)',
+      'description' => 'Sample explanation text',
       'type' => 'number',
       'module' => 'number',
     ),
@@ -269,9 +269,9 @@ field_signup_valid_count_5|Special needs',
         ),
       ),
       'default_value_php' => NULL,
-      'label' => 'High school students',
+      'label' => 'Sample restriction 4',
       'weight' => '4',
-      'description' => 'High school student groups must have 1 adult chaperone for each 10 high school students.',
+      'description' => 'Sample explanation text',
       'type' => 'number',
       'module' => 'number',
     ),
@@ -323,9 +323,9 @@ field_signup_valid_count_5|Special needs',
         ),
       ),
       'default_value_php' => NULL,
-      'label' => 'Special needs',
+      'label' => 'Sample restriction 5',
       'weight' => '5',
-      'description' => 'Please contact our staff to discuss any accommodation of special needs before scheduling.',
+      'description' => 'Sample explanation text',
       'type' => 'number',
       'module' => 'number',
     ),
@@ -333,12 +333,12 @@ field_signup_valid_count_5|Special needs',
 
   // Translatables
   // Included for use with string extractors like potx.
-  t('Children (ages 4-8)');
-  t('Children (ages 8-11)');
-  t('High school students');
-  t('Middle school/Jr. high school students');
-  t('Shift restrictions');
-  t('Special needs');
+  t('Restriction 1');
+  t('Restriction 2');
+  t('Restriction 3');
+  t('Restriction 4');
+  t('Restriction 5');
+  t('Restriction 6');
 
   return $fields;
 }
