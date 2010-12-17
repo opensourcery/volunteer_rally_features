@@ -202,6 +202,8 @@ function shift_signup_management_views_default_views() {
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
+  $handler->override_option('empty', 'No signups found.');
+  $handler->override_option('empty_format', '1');
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
