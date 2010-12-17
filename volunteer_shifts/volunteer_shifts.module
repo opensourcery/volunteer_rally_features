@@ -331,3 +331,43 @@ function volunteer_shifts_box_form($form_state, $content, $title, $description =
 
   return $form;
 }
+
+/**
+ * Implementations of hook_date_format_types().
+ */
+function volunteer_shifts_date_format_types() {
+  return array(
+    'day' => t('Day'),
+    'time' => t('Time'),
+  );
+}
+
+/**
+ * Implementation of hook_date_formats().
+ */
+function volunteer_shifts_date_formats() {
+  $condensed = array(
+    'day' => array(
+      'j F Y',
+      'l, M j',
+      'l, j M',
+      'n/j/Y',
+    ),
+    'time' => array(
+      'g:ia',
+      'H:i',
+      'g:ia T',
+    ),
+  );
+  $formats = array();
+  foreach ($condensed as $type => $f) {
+    foreach ($f as $format) {
+      $formats[] = array(
+        'type' => $type,
+        'format' => $format,
+        'locales' => array(),
+      );
+    }
+  }
+  return $formats;
+}
