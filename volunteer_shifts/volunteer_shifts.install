@@ -1,0 +1,13 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Installation hooks for the Volunteer Shifts feature.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function volunteer_shifts_install() {
+  db_query("UPDATE {system} SET weight = 10 WHERE name = 'volunteer_shifts'");
+}
