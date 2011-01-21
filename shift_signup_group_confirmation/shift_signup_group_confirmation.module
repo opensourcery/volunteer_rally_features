@@ -154,11 +154,11 @@ function shift_signup_group_context_default_contexts_alter(&$contexts) {
     $block = array(
       'module' => 'views',
       'delta' => 'my_group_shift_signups-block_1',
-      'region' => 'sidebar_second',
+      'region' => 'header',
       'weight' => 1,
     );    
-    if (isset($contexts['front_authenticated'])) {
-      $contexts['front_authenticated']
+    if (isset($contexts['sitewide'])) {
+      $contexts['sitewide']
         ->reactions['block']['blocks']['views-my_group_shift_signups-block_1'] = $block;
     }
 
