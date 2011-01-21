@@ -11,7 +11,7 @@ include_once('shift_signup.features.inc');
  * Implementation of hook_form_alter().
  */
 function shift_signup_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id = 'signup_node_form') {
+  if ($form_id == 'signup_node_form') {
     // Fill in default values for start/end times if they aren't set.
     if ($event = node_load($form['field_signup_shift'][0]['nid']['#default_value'])) {
       if (empty($form['field_signup_start_time'][0]['#default_value']['value'])) {
