@@ -272,7 +272,8 @@ function shift_signup_views_default_views() {
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
-  $handler->override_option('title', 'Reservations you made');
+  $handler->override_option('items_per_page', 1);
+  $handler->override_option('title', 'Your next shift');
   $handler->override_option('style_plugin', 'list');
   $handler->override_option('style_options', array(
     'grouping' => '',
