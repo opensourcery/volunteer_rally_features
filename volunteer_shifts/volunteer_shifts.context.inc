@@ -70,12 +70,6 @@ function volunteer_shifts_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
-        'views-my_shift_signups-block_1' => array(
-          'module' => 'views',
-          'delta' => 'my_shift_signups-block_1',
-          'region' => 'sidebar_second',
-          'weight' => 0,
-        ),
         'boxes-volunteer_shifts_site_message' => array(
           'module' => 'boxes',
           'delta' => 'volunteer_shifts_site_message',
@@ -93,5 +87,38 @@ function volunteer_shifts_context_default_contexts() {
   t('Volunteer Rally');
 
   $export['front_authenticated'] = $context;
+  $context = new stdClass;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+  $context->api_version = 3;
+  $context->name = 'sitewide';
+  $context->description = 'Sitewide blocks';
+  $context->tag = 'Volunteer Rally';
+  $context->conditions = array(
+    'sitewide' => array(
+      'values' => array(
+        1 => 1,
+      ),
+    ),
+  );
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(
+        'views-my_shift_signups-block_1' => array(
+          'module' => 'views',
+          'delta' => 'my_shift_signups-block_1',
+          'region' => 'header',
+          'weight' => 0,
+        ),
+      ),
+    ),
+  );
+  $context->condition_mode = 0;
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Sitewide blocks');
+  t('Volunteer Rally');
+
+  $export['sitewide'] = $context;
   return $export;
 }
