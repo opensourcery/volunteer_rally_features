@@ -28,26 +28,6 @@ function volunteer_shifts_link($type, $node, $teaser = FALSE) {
 }
 
 /**
- * Implementation of hook_link_alter().
- */
-function volunteer_shifts_link_alter(&$links, $node) {
-  if ($node->type == 'shift') {
-    if (isset($links['signup_field_signup_shift']) && $signup = volunteer_shifts_get_signup($node)) {
-      // User already has a signup, change link.
-      $links['signup_field_signup_shift'] = array(
-        'href' => 'node/' . $signup->nid . '/edit',
-        'title' => t('Manage your signup'),
-        'attributes' => array('title' => t('Manage your signup')),
-      );
-    }
-    elseif (isset($links['signup_field_signup_shift']) && cck_signup_event_is_past($node)) {
-      // Check if event is in the past, remove link if that is the case.
-      unset($links['signup_field_signup_shift']);
-    }
-  }
-}
-
-/**
  * Implementation of hook_form_alter().
  *
  * - Changes 'Author' to 'User' on sign-up form.
@@ -267,7 +247,7 @@ function volunteer_shifts_theme() {
  */
 function volunteer_shifts_cck_signup_validate($type, $event, &$form_state) {
   $values = $form_state['values'];
-  if (empty($values['nid']) && $existing = volunteer_shifts_get_signup($event)) {
+  if (empty($values['nid']) && $existing = cck_signup_get_signup($event)) {
     // Verify user isn't already signed up.
     form_set_error('', t('You are <a href="!url">already signed up</a> for this event.', array('!url' => url('node/' . $existing->nid))));
   }
@@ -284,32 +264,6 @@ function volunteer_shifts_preprocess_calendar_month_node(&$vars) {
     $vars['fields']['node_data_field_shift_date_field_shift_capacity_value']['data'] = theme('volunteer_shifts_shift_capacity', $total, $remaining);
     drupal_add_css(drupal_get_path('module', 'volunteer_shifts') . '/volunteer-shifts-shift-capacity.css');
   }
-}
-
-/**
- * Get a signup record for a given event.
- *
- * @param $event
- *   Event node object.
- * @param $account
- *   User object.
- * @return boolean
- */
-function volunteer_shifts_get_signup($event, $account = NULL) {
-  if (empty($account)) {
-    global $user;
-    $account = user_load($user->uid);
-  }
-
-  if (!$account->uid) {
-    return FALSE;
-  }
-
-  $signup_nid = db_result(db_query("SELECT n.nid FROM {node} n LEFT JOIN {content_type_signup} s USING (vid) WHERE s.field_signup_shift_nid = %d AND n.type = '%s' AND n.uid = %d", array(':shift_nid' => $event->nid, ':type' => 'signup', ':uid' => $account->uid)));
-  if (!empty($signup_nid)) {
-    return node_load($signup_nid);
-  }
-  return FALSE;
 }
 
 /**
