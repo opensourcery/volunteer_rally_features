@@ -11,7 +11,8 @@ function shift_signup_install() {
   // Set weight of author_smart_name to be less than volunteer_rally.
   update_sql("UPDATE {system} SET weight = -10 WHERE name = 'author_smart_name'");
 
-  return $ret;
+  // Needs to be heavier than the text module too.
+  update_sql("UPDATE {system} SET weight = 10 WHERE name = 'shift_signup'");
 }
 
 /**
