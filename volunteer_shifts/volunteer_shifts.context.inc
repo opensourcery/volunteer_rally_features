@@ -29,13 +29,13 @@ function volunteer_shifts_context_default_contexts() {
         'boxes-volunteer_shifts_welcome_message' => array(
           'module' => 'boxes',
           'delta' => 'volunteer_shifts_welcome_message',
-          'region' => 'sidebar_second',
+          'region' => 'header',
           'weight' => 0,
         ),
         'volunteer_shifts-simple_login' => array(
           'module' => 'volunteer_shifts',
           'delta' => 'simple_login',
-          'region' => 'sidebar_second',
+          'region' => 'header',
           'weight' => 1,
         ),
       ),
