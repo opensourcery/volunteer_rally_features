@@ -120,5 +120,42 @@ function volunteer_shifts_context_default_contexts() {
   t('Volunteer Rally');
 
   $export['sitewide'] = $context;
+  $context = new stdClass;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+  $context->api_version = 3;
+  $context->name = 'volunteer_shifts_sitewide_authenticated';
+  $context->description = '';
+  $context->tag = 'Volunteer Rally';
+  $context->conditions = array(
+    'sitewide' => array(
+      'values' => array(
+        1 => 1,
+      ),
+    ),
+    'user' => array(
+      'values' => array(
+        'authenticated user' => 'authenticated user',
+      ),
+    ),
+  );
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(
+        'menu-secondary-links' => array(
+          'module' => 'menu',
+          'delta' => 'secondary-links',
+          'region' => 'user_tools',
+          'weight' => 0,
+        ),
+      ),
+    ),
+  );
+  $context->condition_mode = 0;
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Volunteer Rally');
+
+  $export['volunteer_shifts_sitewide_authenticated'] = $context;
   return $export;
 }
