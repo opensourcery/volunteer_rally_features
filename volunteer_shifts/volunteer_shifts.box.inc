@@ -13,9 +13,7 @@ function volunteer_shifts_default_box() {
   $box->title = '';
   $box->description = 'Sitewide message for authenticated users';
   $box->options = array(
-    'body' => 'Welcome to your <strong>Volunteer Rally</strong> installation.
-
-<h1>MARCUS! GET SOMETHING BETTER IN HERE</h1>',
+    'body' => 'Welcome to your <strong>Volunteer Rally</strong> installation. Edit this text to add your own welcome message or remove this one.',
     'format' => '2',
   );
 
