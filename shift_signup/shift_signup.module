@@ -14,8 +14,7 @@ function shift_signup_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'signup_node_form') {
     // Fill in default values for start/end times if they aren't set.
     if ($event = node_load($form['field_signup_shift'][0]['nid']['#default_value'])) {
-      if (empty($form['field_signup_start_time'][0]['#default_value']['value'])) {
-        // Logic copied from volunteer_rally_event_process().
+      if (empty($form['group_signup_details']['field_signup_start_time'][0]['#default_value']['value'])) {
         $timezone = !empty($event->field_shift_date[0]['timezone'])
           ? $event->field_shift_date[0]['timezone']
           : date_default_timezone_name();
@@ -30,8 +29,8 @@ function shift_signup_form_alter(&$form, $form_state, $form_id) {
         $start_time = date_format_date($start, 'custom', variable_get('date_format_time', 'g:ia'));
         $end_time = date_format_date($end, 'custom', variable_get('date_format_time', 'g:ia'));
 
-        $form['field_signup_start_time'][0]['#default_value']['value'] = $start_time;
-        $form['field_signup_end_time'][0]['#default_value']['value'] = $end_time;
+        $form['group_signup_details']['field_signup_start_time'][0]['#default_value']['value'] = $start_time;
+        $form['group_signup_details']['field_signup_end_time'][0]['#default_value']['value'] = $end_time;
       }
     }
   }

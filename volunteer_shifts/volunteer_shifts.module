@@ -58,16 +58,6 @@ function volunteer_shifts_form_alter(&$form, $form_state, $form_id) {
 
     // Change page title.
     drupal_set_title(t('Sign-up for shift'));
-
-    // Fill in default values for start/end times.
-    $shift = node_load($form['field_signup_shift'][0]['nid']['#default_value']);
-    if (empty($form['field_signup_start_time'][0]['#default_value']['value'])) {
-      $start_time = date('g:i a', strtotime($shift->field_shift_date[0]['value']));
-      $end_time = date('g:i a', strtotime($shift->field_shift_date[0]['value2']));
-      $form['field_signup_start_time'][0]['#default_value']['value'] = $start_time;
-      $form['field_signup_end_time'][0]['#default_value']['value'] = $end_time;
-    }
-    
   }
   if (in_array($form_id, array('signup_node_form')) && empty($form['nid']['#value'])) {
     // Hide signup status.
